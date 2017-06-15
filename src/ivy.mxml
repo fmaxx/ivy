@@ -1,0 +1,41 @@
+<?xml version="1.0"?>
+<s:WindowedApplication
+        xmlns:fx="http://ns.adobe.com/mxml/2009"
+        xmlns:s="library://ns.adobe.com/flex/spark" creationComplete="onCreationCompleted(event)">
+    <fx:Script><![CDATA[
+        [Embed(source='assets/tickers.json', mimeType='application/octet-stream')]
+        private static const JsonClass:Class;
+
+        import mx.controls.Alert;
+        import mx.events.FlexEvent;
+
+        import service.IvyService;
+
+        private var service:IvyService;
+
+        private function onCreationCompleted(event:FlexEvent):void {
+            var tickers:Vector.<String> = getTickers();
+            service = new IvyService();
+            service.run(tickers, onServiceCompleted, onServiceError);
+        }
+
+        private function onServiceCompleted():void {
+
+        }
+
+        private function onServiceError():void {
+
+        }
+
+        private function getTickers():Vector.<String> {
+            var result:Vector.<String> = new <String>[];
+            var str:String = new JsonClass();
+            var obj:Object = JSON.parse(str);
+            for each (var item:Object in obj) {
+                result.push(item.rts);
+            }
+            return null;
+        }
+        ]]></fx:Script>
+    <s:Button click="Alert.show('Hello, world')" label="Say Hello"/>
+</s:WindowedApplication>
