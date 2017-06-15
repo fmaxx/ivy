@@ -3,6 +3,8 @@
         xmlns:fx="http://ns.adobe.com/mxml/2009"
         xmlns:s="library://ns.adobe.com/flex/spark" creationComplete="onCreationCompleted(event)">
     <fx:Script><![CDATA[
+        import service.IvyDownloadProgressVO;
+
         [Embed(source='assets/tickers.json', mimeType='application/octet-stream')]
         private static const JsonClass:Class;
 
@@ -11,12 +13,16 @@
 
         import service.IvyService;
 
-        private var service:IvyService;
+        private var ivyService:IvyService;
 
         private function onCreationCompleted(event:FlexEvent):void {
             var tickers:Vector.<String> = getTickers();
-            service = new IvyService();
-            service.run(tickers, onServiceCompleted, onServiceError);
+            ivyService = new IvyService();
+            ivyService.run(tickers, onServiceCompleted, onServiceProgress, onServiceError);
+        }
+
+        private function onServiceProgress(data:IvyDownloadProgressVO):void {
+
         }
 
         private function onServiceCompleted():void {
@@ -34,7 +40,16 @@
             for each (var item:Object in obj) {
                 result.push(item.rts);
             }
-            return null;
+
+            result.sort(function (x:String, y:String):Number {
+                if(x < y ) {
+                    return -1
+                }else if(x == y){
+                    return 0
+                }
+                return 1;
+            });
+            return result;
         }
         ]]></fx:Script>
     <s:Button click="Alert.show('Hello, world')" label="Say Hello"/>
