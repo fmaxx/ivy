@@ -5,9 +5,9 @@ package service {
 public class IvyDownloadProgressVO {
 
     public var value:Number;
-    public var data:Object;
+    public var data:IvyTickerVO;
 
-    public function IvyDownloadProgressVO(value:Number, data:Object) {
+    public function IvyDownloadProgressVO(value:Number, data:IvyTickerVO) {
         this.value = value;
         this.data = data;
     }

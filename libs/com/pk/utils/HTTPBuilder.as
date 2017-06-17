@@ -196,6 +196,7 @@ public class HTTPBuilder {
         if(_httpStatus == -1 || _httpStatus == 200){
             // parse result
             var data:* = parseData(loader);
+            _isRunning = false;
             callComplete(data);
         }else{
             // something is wrong, try to reload...

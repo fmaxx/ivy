@@ -35,8 +35,7 @@ public class IvyService {
         this.onProgressCallback = onProgress;
         this.onErrorCallback = onError;
 
-//        nextTicker();
-        loadTicker(tickers[0]);
+        nextTicker();
     }
 
     private function nextTicker():void {
@@ -48,7 +47,6 @@ public class IvyService {
         }else{
             currentTicker = tickers[ind + 1];
             var delay:int =randomTimeout();
-            trace(currentTicker, loadedTickers/tickers.length, delay);
             loadingTimeout = setTimeout(doLoad, delay);
         }
     }
@@ -58,7 +56,7 @@ public class IvyService {
         loadTicker(currentTicker);
     }
 
-    private function randomTimeout(min:int = 100, max:int = 200):int{
+    private function randomTimeout(min:int = 50, max:int = 300):int{
         var delta:int = max - min;
         return min + delta * Math.random();
     }
@@ -67,10 +65,17 @@ public class IvyService {
         loader.run(ticker, onLoaderComplete, onLoaderError);
     }
 
-    private function onLoaderComplete(data:Object = null):void{
+    private function onLoaderComplete(data:IvyTickerVO = null):void{
         trace("onHTTPComplete : " + data);
         loadedTickers++;
+        callProgress(data);
         nextTicker();
+    }
+
+    private function callProgress(data:IvyTickerVO):void {
+        if (onProgressCallback != null) {
+            onProgressCallback(new IvyDownloadProgressVO(loadedTickers/tickers.length, data));
+        }
     }
 
     private function onLoaderError(data:Object = null):void{

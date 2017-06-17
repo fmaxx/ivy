@@ -1,8 +1,11 @@
 <?xml version="1.0"?>
 <s:WindowedApplication
         xmlns:fx="http://ns.adobe.com/mxml/2009"
+        xmlns:mx="library://ns.adobe.com/flex/mx"
         xmlns:s="library://ns.adobe.com/flex/spark" creationComplete="onCreationCompleted(event)">
     <fx:Script><![CDATA[
+        import org.apache.flex.collections.VectorCollection;
+
         import service.IvyDownloadProgressVO;
 
         [Embed(source='assets/tickers.json', mimeType='application/octet-stream')]
@@ -15,6 +18,9 @@
 
         private var ivyService:IvyService;
 
+        [Bindable]
+        private var collection:VectorCollection = new VectorCollection();
+
         private function onCreationCompleted(event:FlexEvent):void {
             var tickers:Vector.<String> = getTickers();
             ivyService = new IvyService();
@@ -22,7 +28,11 @@
         }
 
         private function onServiceProgress(data:IvyDownloadProgressVO):void {
+            if(data && data.data){
+                collection.addItem(data.data);
+            }
 
+            statusText.text = "Downloaded: " + Math.round(data.value * 10000)/100 + "%"
         }
 
         private function onServiceCompleted():void {
@@ -52,5 +62,14 @@
             return result;
         }
         ]]></fx:Script>
-    <s:Button click="Alert.show('Hello, world')" label="Say Hello"/>
+
+
+    <mx:DataGrid id="dg" width="100%" height="100%" rowCount="4" dataProvider="{collection}">
+        <mx:columns>
+            <mx:DataGridColumn dataField="ticker" headerText="Ticker"/>
+            <mx:DataGridColumn dataField="averageValue" headerText="Average (12mo)"/>
+            <mx:DataGridColumn dataField="lastValue" headerText="Last (15min)"/>
+            <mx:DataGridColumn dataField="percents" headerText="Percents"/>
+        </mx:columns>
+    </mx:DataGrid>
 </s:WindowedApplication>

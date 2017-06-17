@@ -57,18 +57,17 @@ public class IvyTickerLoader {
     }
 
     private function onHistoricalHTTPComplete(data:Object = null):void{
-        trace("onHistoricalHTTPComplete : " + data);
         tickerVO = parseHistoricalData(data);
+//        trace("onHistoricalHTTPComplete : " + tickerVO);
         if(tickerVO){
-//            loadTodayData();
-            callComplete(tickerVO);
+            loadTodayData();
         }else{
             callError();
         }
     }
 
     private function onTodayHTTPComplete(data:Object = null):void{
-        trace("onTodayHTTPComplete : " + data);
+//        trace("onTodayHTTPComplete : " + data);
         var vo:IvyTickerVO = parseTodayData(data);
         if(vo){
             callComplete(vo);
@@ -97,13 +96,20 @@ public class IvyTickerLoader {
     private function parseHistoricalData(data:Object):IvyTickerVO {
         try{
             var rawData:Object = JSON.parse(String(data));
-            return new IvyTickerVO(rawData);
+            var tickerVO:IvyTickerVO = new IvyTickerVO();
+            tickerVO.addHistoricalData(rawData);
+            return tickerVO.isHistoricalValid ? tickerVO : null;
         }catch(e:Error){}
         return null;
     }
 
     private function parseTodayData(data:Object):IvyTickerVO {
-        return new IvyTickerVO(data);
+        try{
+            var rawData:Object = JSON.parse(String(data));
+            tickerVO.addTodayData(rawData);
+            return tickerVO.isTodayValid ? tickerVO : null;
+        }catch(e:Error){}
+        return null;
     }
 
     private function onHTTPError(data:Object = null):void{
