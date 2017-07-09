@@ -4,9 +4,21 @@
         xmlns:mx="library://ns.adobe.com/flex/mx"
         xmlns:s="library://ns.adobe.com/flex/spark" creationComplete="onCreationCompleted(event)">
     <fx:Script><![CDATA[
+        import mx.managers.PopUpManager;
+
         import org.apache.flex.collections.VectorCollection;
 
         import service.IvyDownloadProgressVO;
+        import service.IvyTickerVO;
+        import service.IvyTickerVO;
+
+        import spark.components.Alert;
+
+        import storage.Storage;
+
+        import vo.PresetVO;
+
+        public static var instance:ivy;
 
         [Embed(source='assets/tickers.json', mimeType='application/octet-stream')]
         private static const JsonClass:Class;
@@ -18,21 +30,43 @@
 
         private var ivyService:IvyService;
 
+
         [Bindable]
-        private var collection:VectorCollection = new VectorCollection();
+        private var loadedTickers:VectorCollection = new VectorCollection();
+
+        [Bindable]
+        private var presets:VectorCollection;
+
+        [Bindable]
+        private var selectedPreset:PresetVO;
+
+        [Bindable]
+        private var selectedTickers:VectorCollection = new VectorCollection();
+
+        private var allTickers:Vector.<Object> = getTickersObjects();
+
 
         private function onCreationCompleted(event:FlexEvent):void {
-            var tickers:Vector.<String> = getTickers();
+            instance = this;
             ivyService = new IvyService();
-            ivyService.run(tickers, onServiceCompleted, onServiceProgress, onServiceError);
+            reset();
+            nativeWindow.maximize();
         }
 
         private function onServiceProgress(data:IvyDownloadProgressVO):void {
-            if(data && data.data){
-                collection.addItem(data.data);
+            if (data && data.data) {
+
+                for each (var object:Object in allTickers) {
+                    if(data.data.ticker == object.rts){
+                        data.data.tickerFull = object.name;
+                        break;
+                    }
+                }
+
+                loadedTickers.addItem(data.data);
             }
 
-            statusText.text = "Downloaded: " + Math.round(data.value * 10000)/100 + "%"
+            statusText.text = "Downloaded: " + Math.round(data.value * 10000) / 100 + "%"
         }
 
         private function onServiceCompleted():void {
@@ -52,24 +86,150 @@
             }
 
             result.sort(function (x:String, y:String):Number {
-                if(x < y ) {
+                if (x < y) {
                     return -1
-                }else if(x == y){
+                } else if (x == y) {
                     return 0
                 }
                 return 1;
             });
             return result;
         }
+
+        private function getTickersObjects():Vector.<Object> {
+            var result:Vector.<Object> = new <Object>[];
+            var str:String = new JsonClass();
+            var obj:Object = JSON.parse(str);
+            for each (var item:Object in obj) {
+                result.push(item);
+            }
+            return result;
+        }
+
+        private function onLoadClick(event:MouseEvent = null):void {
+            var tickers:Vector.<String>;
+            if (selectedPreset.all) {
+                tickers = getTickers();
+            } else {
+                tickers = Vector.<String>(selectedPreset.tickers);
+            }
+            ivyService.run(tickers, onServiceCompleted, onServiceProgress, onServiceError);
+            currentState = "data";
+        }
+
+        public function onSelectTicker(event:Event):void {
+            updateSelectedTickers();
+        }
+
+        private function updateSelectedTickers():void {
+            var arr:Array = loadedTickers.toArray();
+            var selected:Array = arr.filter(function (item:IvyTickerVO, index:int, a:Array):Boolean {
+                return item.selected;
+            });
+            selectedTickers.removeAll();
+            selectedTickers.addAll(new VectorCollection(Vector.<IvyTickerVO>(selected)));
+        }
+
+        private function onSavePreset(event:Event):void {
+            var popup:PresetNamePopup = new PresetNamePopup();
+            popup.onOkCallback = function (name:String):void {
+                var preset:PresetVO = new PresetVO();
+                preset.tickers = [];
+                var tickers:Array = selectedTickers.toArray();
+                for each (var ivyTickerVO:IvyTickerVO in tickers) {
+                    preset.tickers.push(ivyTickerVO.ticker);
+                }
+                preset.label = name;
+                Storage.savePreset(preset);
+            };
+            PopUpManager.addPopUp(popup, this, true);
+        }
+
+        public function onRemovePresetClick(event:MouseEvent):void {
+            if (selectedPreset && !selectedPreset.all) {
+                presets.removeItem(selectedPreset);
+                Storage.removePreset(selectedPreset);
+            }
+
+        }
+
+        private function onBack(event:MouseEvent):void {
+            currentState = "start";
+            reset();
+        }
+
+        protected function reset():void {
+            ivyService.stop();
+            loadedTickers.removeAll();
+            presets = Storage.getSavedPresets();
+            selectedPreset = presets.getItemAt(0) as PresetVO;
+        }
+
+        private function onUnselectAll(event:MouseEvent):void {
+            for each (var ivyTickerVO:IvyTickerVO in selectedTickers) {
+                ivyTickerVO.selected = false;
+            }
+            selectedTickers.removeAll();
+        }
+
+        private function onDoubleClick(event:MouseEvent):void {
+            onLoadClick()
+        }
         ]]></fx:Script>
 
 
-    <mx:DataGrid id="dg" width="100%" height="100%" rowCount="4" dataProvider="{collection}">
-        <mx:columns>
-            <mx:DataGridColumn dataField="ticker" headerText="Ticker"/>
-            <mx:DataGridColumn dataField="averageValue" headerText="Average (12mo)"/>
-            <mx:DataGridColumn dataField="lastValue" headerText="Last (15min)"/>
-            <mx:DataGridColumn dataField="percents" headerText="Percents"/>
-        </mx:columns>
-    </mx:DataGrid>
+    <s:states>
+        <s:State name="start" />
+        <s:State name="data" />
+    </s:states>
+
+
+    <s:VGroup width="100%" height="100%" horizontalAlign="right" includeIn="start">
+        <s:List width="100%" height="100%" doubleClickEnabled="true" doubleClick="onDoubleClick(event)"
+                dataProvider="{presets}"
+                selectedItem="@{selectedPreset}">
+            <s:itemRenderer>
+                <fx:Component>
+                    <s:ItemRenderer>
+                        <s:Group width="100%" height="100%">
+                            <s:Label text="{data.label}" verticalCenter="0" />
+                            <s:Button label="Remove" click="ivy.instance.onRemovePresetClick(event)" right="2"
+                                      verticalCenter="0"/>
+                        </s:Group>
+                    </s:ItemRenderer>
+                </fx:Component>
+            </s:itemRenderer>
+        </s:List>
+        <s:Button label="Load preset" enabled="{Boolean(selectedPreset)}" click="onLoadClick(event)"/>
+    </s:VGroup>
+
+    <s:VGroup width="100%" height="100%" horizontalAlign="right" includeIn="data">
+        <mx:DataGrid id="dg" width="100%" height="100%" rowCount="4" dataProvider="{loadedTickers}">
+            <mx:columns>
+                <mx:DataGridColumn dataField="ticker" headerText="" width="30">
+                    <mx:itemRenderer>
+                        <fx:Component>
+                            <mx:HBox toolTip="{data.tickerFull}" horizontalAlign="center" verticalAlign="middle">
+                                <s:CheckBox change="ivy.instance.onSelectTicker(event)"
+                                            selected="@{data.selected}"/>
+                            </mx:HBox>
+                        </fx:Component>
+                    </mx:itemRenderer>
+                </mx:DataGridColumn>
+
+                <mx:DataGridColumn dataField="ticker" headerText="Ticker" />
+                <mx:DataGridColumn dataField="averageValue" headerText="Average ({Settings.RANGE})"/>
+                <mx:DataGridColumn dataField="lastValue" headerText="Last ({Settings.LAST_INTERVAL})"/>
+                <mx:DataGridColumn dataField="percents" headerText="Percents"/>
+            </mx:columns>
+        </mx:DataGrid>
+
+        <s:HGroup>
+            <s:Button label="Back" click="onBack(event)" />
+            <s:Button label="Save preset" click="onSavePreset(event)" enabled="{selectedTickers.length > 0}" />
+            <s:Button label="Unselect" click="onUnselectAll(event)" enabled="{selectedTickers.length > 0}"/>
+        </s:HGroup>
+
+    </s:VGroup>
+
 </s:WindowedApplication>

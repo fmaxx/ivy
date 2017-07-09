@@ -9,9 +9,11 @@ public class IvyTickerVO {
     private var _isHistoricalValid:Boolean;
     private var _isTodayValid:Boolean;
     public var ticker:String;
+    public var tickerFull:String;
     public var averageValue:Number;
     public var lastValue:Number;
     public var percents:Number;
+    public var selected:Boolean;
 
     public function IvyTickerVO() {
 
@@ -19,18 +21,40 @@ public class IvyTickerVO {
 
 
     public function addHistoricalData(rawData:Object):void{
+        var currentMonth:int = new Date().getMonth();
         _isHistoricalValid = false;
         averageValue = 0;
         var quotes:Vector.<QuoteVO> = getQuotes(rawData);
+        var filtered:Vector.<QuoteVO> = new <QuoteVO>[];
         if(quotes && quotes.length > 0){
             _isHistoricalValid = true;
+
+            var latest:Number = quotes[0].date.getMonth();
+            var lastQuote:QuoteVO;
             for each (var quoteVO:QuoteVO in quotes) {
+                var m:Number = quoteVO.date.getMonth();
+                if(m != latest){
+                    if(m != currentMonth) {
+                        filtered.push(lastQuote);
+                    }
+                    latest = m;
+                }
+                lastQuote = quoteVO;
+            }
+
+
+            for each (quoteVO in filtered) {
                 averageValue += quoteVO.value;
             }
-            averageValue /= quotes.length;
+
+            averageValue /= filtered.length;
+
         }
         ticker = getTicker(rawData);
+//        tickerFull = getTickerFull(rawData);
     }
+
+
 
     public function get isHistoricalValid():Boolean {
         return _isHistoricalValid;
@@ -75,6 +99,8 @@ public class IvyTickerVO {
 
         return out;
     }
+
+
 
     private function getTicker(rawData:Object):String{
         if(rawData && rawData.hasOwnProperty("chart") &&

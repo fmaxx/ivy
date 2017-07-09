@@ -1,0 +1,52 @@
+<?xml version="1.0"?>
+<!--
+  Created by maximfirsov on 09/07/2017.
+-->
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009"
+               xmlns:s="library://ns.adobe.com/flex/spark" close="onCloseClick(event)"
+               width="300" height="150" title="Preset name"
+               creationComplete="onCreationComplete(event)"
+>
+    <s:layout>
+        <s:VerticalLayout padding="10" verticalAlign="middle" horizontalAlign="center">
+
+        </s:VerticalLayout>
+    </s:layout>
+
+    <s:TextInput width="100%" text="@{text}" prompt="Input text here..."/>
+    <s:HGroup>
+        <s:Button label="Ok" click="onOk(event)" enabled="{Boolean(text)}"/>
+        <s:Button label="Cancel" click="onCancel(event)"/>
+    </s:HGroup>
+
+    <fx:Script><![CDATA[
+        import mx.events.CloseEvent;
+        import mx.events.FlexEvent;
+        import mx.managers.PopUpManager;
+
+        [Bindable]
+        protected var text:String;
+
+        public var onOkCallback:Function;
+
+        private function onCancel(event:MouseEvent = null):void {
+            PopUpManager.removePopUp(this);
+            onOkCallback = null;
+        }
+
+        private function onCreationComplete(event:FlexEvent):void {
+            PopUpManager.centerPopUp(this);
+        }
+
+        private function onOk(event:MouseEvent):void {
+            if(onOkCallback != null){
+                onOkCallback(text)
+            }
+            onCancel();
+        }
+
+        private function onCloseClick(event:CloseEvent):void {
+            onCancel();
+        }
+        ]]></fx:Script>
+</s:TitleWindow>

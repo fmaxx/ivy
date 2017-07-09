@@ -34,7 +34,8 @@ public class IvyTickerLoader {
     }
 
     private function loadHistoricalData():void {
-        var urlVars:URLVariables = buildVariables("1y", "1mo");
+//        var urlVars:URLVariables = buildVariables("1y", "1mo");
+        var urlVars:URLVariables = buildVariables(Settings.RANGE, Settings.INTERVAL);
         runBuilder(urlVars, onHistoricalHTTPComplete);
     }
 
@@ -77,7 +78,7 @@ public class IvyTickerLoader {
     }
 
     private function loadTodayData():void {
-        var urlVars:URLVariables = buildVariables("1d", "15m");
+        var urlVars:URLVariables = buildVariables("1d", Settings.LAST_INTERVAL);
         runBuilder(urlVars, onTodayHTTPComplete);
     }
 
