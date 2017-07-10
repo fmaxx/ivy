@@ -35,6 +35,7 @@ public class IvyTickerVO {
                 var m:Number = quoteVO.date.getMonth();
                 if(m != latest){
                     if(m != currentMonth) {
+//                        trace(lastQuote.date);
                         filtered.push(lastQuote);
                     }
                     latest = m;
@@ -62,10 +63,18 @@ public class IvyTickerVO {
 
     public function addTodayData(rawData:Object):void {
         _isTodayValid = false;
+        if(ticker == "AGN"){
+            trace("$$$$")
+        }
         var quotes:Vector.<QuoteVO> = getQuotes(rawData);
         if(quotes && quotes.length > 0){
             _isTodayValid = true;
-            lastValue = quotes[quotes.length - 1].value;
+            var index:int = quotes.length - 1;
+            lastValue = 0;
+            while(index || lastValue <= 0){
+                lastValue = quotes[index--].value;
+            }
+
         }
 
         if(averageValue > 0 && lastValue > 0){
@@ -82,7 +91,7 @@ public class IvyTickerVO {
         var out:Vector.<QuoteVO>;
         if(rawData && rawData.hasOwnProperty("chart") &&
                 rawData.chart.hasOwnProperty("result")){
-            var result:Object = rawData.chart.result[0]
+            var result:Object = rawData.chart.result[0];
 
             if(result && result.hasOwnProperty("indicators") &&
                     result.hasOwnProperty("timestamp") ){

@@ -52,7 +52,7 @@ public class IvyService {
     }
 
     private function doLoad():void{
-        trace("doLoad : " + currentTicker);
+//        trace("doLoad : " + currentTicker);
         loadTicker(currentTicker);
     }
 
@@ -66,7 +66,7 @@ public class IvyService {
     }
 
     private function onLoaderComplete(data:IvyTickerVO = null):void{
-        trace("onHTTPComplete : " + data);
+//        trace("onHTTPComplete : " + data);
         loadedTickers++;
         callProgress(data);
         nextTicker();
